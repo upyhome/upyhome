@@ -1,0 +1,21 @@
+{
+  "digital-inputs": [
+    {
+      "pin": 0,
+      "inverted": false,
+      "name": "btn"
+    }
+  ],
+  "digital-outputs": [
+    {
+      "pin": 12,
+      "inverted": false,
+      "name": "relay"
+    },
+    {
+      "pin": 13,
+      "inverted": true,
+      "name": "led"
+    }
+  ]
+}

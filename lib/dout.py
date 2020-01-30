@@ -1,3 +1,14 @@
+#
+# This file is part of µpyhone
+# Copyright (c) 2020 ng-galien
+#
+# Licensed under the MIT license:
+#   http://www.opensource.org/licenses/mit-license.php
+#
+# Project home:
+#   https://github.com/upyhome/upyhome
+#
+
 from machine import Pin
 
 class DigitalOutputPin:
@@ -33,5 +44,5 @@ class DigitalOutputPin:
         else:
             self.on()
 
-    def print_status(self):
+    def print_val(self):
         print('#do:{}=[{}]'.format(self.name, int(self.state())))

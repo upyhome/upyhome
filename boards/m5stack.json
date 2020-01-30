@@ -2,6 +2,19 @@
     "platorm": "esp32",
     "digital-inputs": [
         {
+            "pin": 39,
+            "name": "btnA",
+            "inverted": true,
+            "long": 1000,
+            "user_cb": [
+                "import __main__",
+                "if event=='L':",
+                "    print('Long event press, print button state...')",
+                "    __main__.dins['btnA'].print_state()",
+                "    print('End')"
+            ]
+        },
+        {
             "pin": 38,
             "name": "btnB",
             "inverted": true,

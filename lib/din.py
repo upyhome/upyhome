@@ -1,70 +1,73 @@
-from machine import Pin
-from machine import Timer
+#
+# This file is part of µpyhone
+# Copyright (c) 2020 ng-galien
+#
+# Licensed under the MIT license:
+#   http://www.opensource.org/licenses/mit-license.php
+#
+# Project home:
+#   https://github.com/upyhome/upyhome
+#
 
-
+from machine import Pin, Timer
 """
-Input helper.
-It manages two kinds of signal
-    - When it's pressed, trigger is when it's releases
-    - When it's long pressed, trigger along press 
+It prints tree events
+    - When it's pressed -> P
+    - When it's clicked -> C
+    - When it's long pressed -> L
 """
-
 class DigitalInputPin:
 
-    """
-    Construct an input
-    """
-    def __init__(self, h_pin, name, inverted=False, debounce=100, long=1000):
-
+    def __init__(self, h_pin, name, tid, inverted=True, debounce=60, long=1000, user_cb=None):
         self.name = name
         self.inv = inverted
         self.dbc_t = debounce
         self.long_t = long
-        self.pin = Pin(h_pin, Pin.IN, Pin.PULL_UP)
-        self.dbc_tim = Timer(-1)
-        self.user_cb = None;
-        self.i_val = self.pin.value()
-        self.pressed = False
-        self.supp = False
+        self.custom_cb = user_cb
+        self.user_cb = self.user_eval if user_cb else None
+        self.debouncing = False
+        self.suppress = False
+        self.target = 0
+        self.dbc_tim = Timer(tid)
+        self.pin = Pin(h_pin, Pin.IN, Pin.PULL_UP if self.inv else Pin.PULL_DOWN)
         self.pin.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=self.irq_cb)
 
     def set_callback(self, user_cb):
-        self.user_cb = user_cb;
+        self.user_cb = user_cb
+        
+    def user_eval(self, event):
+        cmd = "\n".join(self.custom_cb)
+        exec(cmd, globals(), {'event': event}) 
 
-    """
-    This callback is call when the hardware input interrupts
-    This is where the debounce timer is handled
-    """
     def irq_cb(self, pin):
-        # Once it comes we can cancel every timers previously launched
-        self.dbc_tim.deinit()
-        # Set the initial value
-        self.i_val = pin.value()
-        # Pressed or released according if input is inverted
-        self.pressed = (self.inv and not self.i_val) or (not self.inv and self.i_val)
-        # The debounce timer is launched here...
+        self.target = pin.value()
+        if self.debouncing or self.suppress:
+            self.suppress = False
+            self.debouncing = False
+            self.dbc_tim.deinit()
+            return
         self.dbc_tim.init(period=self.dbc_t, mode=Timer.ONE_SHOT, callback=self.dbc_cb)
-
-    def long_cb(self, tim):
-
-        if self.pin.value() == self.i_val:
-            self.supp = True
-            print('#di:{}=[L]'.format(self.name))
-            if self.user_cb is not None:
-                self.user_cb('L')
+        self.debouncing = True
 
     def dbc_cb(self, tim):
-
-        if self.pressed:
-            if self.pin.value() == self.i_val:
-                if not self.supp:
-                    print('#di:{}=[C]'.format(self.name))
-                    if self.user_cb is not None:
-                        self.user_cb('C')
-        else:
-            if self.pin.value() == self.i_val:
-                print('#di:{}=[P]'.format(self.name))
-                if self.user_cb is not None:
-                    self.user_cb('P')
+        self.debouncing = False
+        if self.pin.value() == self.target:
+            event = 'C' if (self.inv and self.target == 1) or (not self.inv and self.target == 0) else 'P'
+            self.print_event(event)
+            if(event == 'P'):
                 self.dbc_tim.init(period=self.long_t, mode=Timer.ONE_SHOT, callback=self.long_cb)
-        self.supp = False
+            else:
+                self.dbc_tim.deinit()
+        
+    def long_cb(self, tim):
+        if self.pin.value() == self.target:
+            self.suppress = True
+            self.print_event('L')
+    
+    def print_event(self, event):
+        print('#di:{}=[{}]'.format(self.name, event))
+        if self.user_cb is not None:
+            self.user_cb(event)
+            
+    def print_val(self):
+        print('#di:{}=[{}]'.format(self.name, self.pin.value()))

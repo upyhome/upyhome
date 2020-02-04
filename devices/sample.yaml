@@ -1,0 +1,26 @@
+platform: esp8266
+network: []
+repl: repl_pwd
+digital-inputs:
+  - name: btn
+    pin: 0
+    inverted: false
+    long: 1200
+    pullup: true
+    user_cb: |
+      if val=='P':
+          uph.douts['relay'].toggle()
+digital-outputs:
+  - name: relay
+    pin: 12
+    inverted: false
+  - name: led
+    pin: 13
+    inverted: true
+upyhome:
+  port:
+  firmware:
+networks:
+  - network: Ersilia IOT
+    dhcp: true
+    repl_pwd: password

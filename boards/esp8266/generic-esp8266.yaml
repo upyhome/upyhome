@@ -1,0 +1,9 @@
+
+platform: esp8266
+networks: []
+digital-inputs: []
+digital-outputs: []
+upyhome:
+  port:
+  firmware:
+

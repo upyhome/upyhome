@@ -1,0 +1,9 @@
+{
+    "platform": "esp32",
+    "digital-inputs": [],
+    "digital-outputs": [],
+    "neopixel": [],
+    "i2c": [],
+    "drivers": []
+}
+

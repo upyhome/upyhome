@@ -1,0 +1,25 @@
+{
+    "platform": "esp8266",
+    "digital-inputs": [
+        {
+            "name": "btn",
+            "pin": 0,
+            "inverted": false,
+            "long": 1200,
+            "pullup": true,
+            "user_cb": "if event=='L':\n    print('#info:cb_btn=[Long event press, toggle relay...]')\n    uph.douts['relay'].toggle()\n    print('#info:cb_btn=[End]')\n"
+        }
+    ],
+    "digital-outputs": [
+        {
+            "name": "relay",
+            "pin": 12,
+            "inverted": false
+        },
+        {
+            "name": "led",
+            "pin": 13,
+            "inverted": true
+        }
+    ]
+}

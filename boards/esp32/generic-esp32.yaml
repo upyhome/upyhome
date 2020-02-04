@@ -1,0 +1,7 @@
+
+platform: esp8266
+digital-inputs: []
+digital-outputs: []
+led: []
+i2cs: []
+drivers: []

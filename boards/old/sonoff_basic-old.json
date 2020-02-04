@@ -1,0 +1,23 @@
+{
+	"platform": "esp8266",
+	"digital-inputs": [
+		{
+			"pin": 0,
+			"inverted": false,
+			"name": "button",
+			"long": 1200
+		}
+	],
+	"digital-outputs": [
+		{
+			"pin": 12,
+			"inverted": false,
+			"name": "relay"
+		},
+		{
+			"pin": 13,
+			"inverted": true,
+			"name": "led"
+		}
+	]
+}

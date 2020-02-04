@@ -1,0 +1,5 @@
+{
+	"platform": "esp8266",
+	"digital-inputs": [],
+	"digital-outputs": []
+}

@@ -1,5 +1,5 @@
 {
-    "platorm": "esp32",
+    "platform": "esp32",
     "digital-inputs": [
         {
             "pin": 39,
@@ -28,14 +28,14 @@
         }
     ],
     "digital-outputs": [],
-    "neopixel": [
+    "leds": [
         {
             "pin": 39,
             "name": "bar",
             "size": 10
         }
     ],
-    "i2c": [
+    "i2cs": [
         {
             "hard": true,
             "num": 0,

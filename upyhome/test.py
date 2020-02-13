@@ -38,3 +38,9 @@ import time
 now = time.localtime(time.time())
 t_tuple = now.__reduce__()[1][0]
 print(t_tuple)
+
+print([ i for i in range(2) ])
+
+import os
+print(os.stat('README.md'))
+print(os.stat('upyhome'))

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#TODO Cleanup
 """
 pyboard interface
 
@@ -178,42 +178,39 @@ class Pyboard:
             time.sleep(_rawdelay)
 
         # ctrl-C twice: interrupt any running program
-        self.serial.write(b'\r\x03')
-        time.sleep(0.1)
-        self.serial.write(b'\x03')
-        time.sleep(0.1)
-
+        #self.serial.write(b'\r\x03')
+        #time.sleep(0.1)
+        #self.serial.write(b'\x03')
+        #time.sleep(1)
         # flush input (without relying on serial.flushInput())
         n = self.serial.inWaiting()
         while n > 0:
             self.serial.read(n)
             n = self.serial.inWaiting()
-
-        self.serial.write(b'\r\x01') # ctrl-A: enter raw REPL
-        data = self.read_until(1, b'raw REPL; CTRL-B to exit\r\n>')
-        if not data.endswith(b'raw REPL; CTRL-B to exit\r\n>'):
-            print(data)
-            raise PyboardError('could not enter raw repl')
-
-        self.serial.write(b'\x04') # ctrl-D: soft reset
-        data = self.read_until(1, b'soft reboot\r\n')
-        if not data.endswith(b'soft reboot\r\n'):
-            print(data)
-            raise PyboardError('could not enter raw repl')
-        # By splitting this into 2 reads, it allows boot.py to print stuff,
-        # which will show up after the soft reboot and before the raw REPL.
-        # Modification from original pyboard.py below:
-        #   Add a small delay and send Ctrl-C twice after soft reboot to ensure
-        #   any main program loop in main.py is interrupted.
-        time.sleep(0.5)
-        self.serial.write(b'\x03')
-        time.sleep(0.1)           # (slight delay before second interrupt
-        self.serial.write(b'\x03')
-        # End modification above.
-        data = self.read_until(1, b'raw REPL; CTRL-B to exit\r\n')
-        if not data.endswith(b'raw REPL; CTRL-B to exit\r\n'):
-            print(data)
-            raise PyboardError('could not enter raw repl')
+        self.serial.write(b'\r\n')
+        repl = False
+        ntry = 0
+        while not repl and ntry < 3:
+            data = b''
+            time.sleep(0.2)
+            n = self.serial.inWaiting()
+            while n > 0:
+                data += self.serial.read(n)
+                n = self.serial.inWaiting()
+            msg = data.decode('utf8').replace('\r\n', '')
+            if msg.endswith('>>> '):
+                #print('Enter in REPL mode...')
+                #Must enter in REPL mode
+                self.serial.write(b'\x0D\x01')                
+            elif msg.endswith('raw REPL; CTRL-B to exit>'):
+                repl = True
+            else:
+                print('already in REPL mode...')
+                self.serial.write(b'\x0D\x02')
+            ntry += 1
+        if not repl:
+            raise PyboardError('Can''t enter RAW REPL')
+        
 
     def exit_raw_repl(self):
         self.serial.write(b'\r\x02') # ctrl-B: enter friendly REPL
@@ -241,19 +238,29 @@ class Pyboard:
             command_bytes = bytes(command, encoding='utf8')
 
         # check we have a prompt
-        data = self.read_until(1, b'>')
-        if not data.endswith(b'>'):
-            raise PyboardError('could not enter raw repl')
+        #data = self.read_until(1, b'>')
+        #if not data.endswith(b'>'):
+        #    raise PyboardError('could not enter raw repl')
 
         # write command
         for i in range(0, len(command_bytes), 256):
             self.serial.write(command_bytes[i:min(i + 256, len(command_bytes))])
             time.sleep(0.01)
         self.serial.write(b'\x04')
-
+        #time.sleep(0.2)
         # check if we could exec command
-        data = self.serial.read(2)
-        if data != b'OK':
+        data = b''
+        ok = False
+        data += self.serial.read(2)
+        while self.serial.in_waiting > 0:  # Or: while ser.inWaiting():
+            data += self.serial.read(1)
+            if data.decode('utf8').endswith('OK'):
+                ok = True
+                break
+            time.sleep(0.1)
+        ok = data.decode('utf8').endswith('OK')             
+        if not ok:  
+            print(data)         
             raise PyboardError('could not exec command')
 
     def exec_raw(self, command, timeout=10, data_consumer=None):

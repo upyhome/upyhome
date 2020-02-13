@@ -22,15 +22,27 @@ from upyhome.const import DEVICE_DIR, BOARD_DIR, NETWORK_DIR, FIRMWARE_DIR
 from upyhome.config import is_setting_val, get_setting_val, set_setting_val
 from upyhome.config import save_config_obj, write_network_conf, get_generator_names
 
+COLOR_INFO = "magenta"
+COLOR_ASK = "blue"
+COLOR_ACTION = "green"
+COLOR_ADVERT = "yellow"
+COLOR_RESULT = "white"
+COLOR_ERROR = "red"
+COLOR_COMMENT = "blue"
+COLOR_SRC = "bright_black"
+
+"""
+TODO make ask method more generic
+"""
 def ask_port():
     ports = []
     detected = False
     for port in list_ports.comports():
-        if port.interface is not None:
-            detected = True
-            ports.append(port)
+        #if port.interface is not None:
+        detected = True
+        ports.append(port)
     if not detected:
-        print('No serial devices detected')
+        click.secho('No serial devices detected', fg="red")
         return None
     click.secho("Detected ports", fg="green")
     for i, port in enumerate(ports):
@@ -125,4 +137,13 @@ def ask_generator(config):
     selection = "0"
     while not (selection.isdigit() and 0 < int(selection) <= len(name_list)):
         selection = click.prompt("Select a config (enter row number)").strip()
-    return int(selection) - 1 
+    return int(selection) - 1
+
+def ask_sync(configs):
+    click.secho("Available configs:", fg=COLOR_ASK)
+    for i, config in enumerate(configs):
+        click.echo('[%d]: config %03d' %(i+1, i))
+    selection = "0"
+    while not (selection.isdigit() and 0 < int(selection) <= len(configs)):
+        selection = click.prompt("Select a config (enter row number)").strip()
+    return int(selection) - 1

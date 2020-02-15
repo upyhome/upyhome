@@ -1,26 +1,46 @@
 platform: esp8266
-network: []
-repl: repl_pwd
+debug: false
 digital-inputs:
-  - name: btn
+  - topic: btn
     pin: 0
-    inverted: false
+    inverted: true
     long: 1200
-    pullup: true
-    user_cb: |
-      if val=='P':
-          uph.douts['relay'].toggle()
+    debounce: 60
+    user: |
+      #print('btn user code')
+      next = event == 'C'
 digital-outputs:
-  - name: relay
+  - topic: relay
     pin: 12
     inverted: false
-  - name: led
+    suscribe:
+      topics:
+        - led
+      user: |
+        #print('relay user code')
+        action.toggle()
+  - topic: led
     pin: 13
     inverted: true
+    suscribe:
+      topics: $$get_led_topics
+      user: |
+        #print('led user code')
+        action.toggle()
+
 upyhome:
-  port:
-  firmware:
-networks:
-  - network: Ersilia IOT
-    dhcp: true
-    repl_pwd: password
+  port: /dev/cu.usbserial-AH030NYK
+  firmware: ./firmwares/esp8266-v1.12.bin
+  generator:
+    module: sample_generator
+    list: range(4)
+    args:
+      count: 4
+      name: generated
+network:
+  repl: repl
+  wifi:
+    - topic: $$get_wifi_name
+      credentials: $wifi
+      config: $ip-conf
+name: $$device_name

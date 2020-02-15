@@ -1,0 +1,4 @@
+ip: $$get_ip
+mask: $$'{0}.{1}.{2}.{3}'.format(*tuple([255 for i in range(4)]))
+gateway: $$get_gateway_dns
+dns: $$get_gateway_dns

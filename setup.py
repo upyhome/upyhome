@@ -10,11 +10,9 @@ setup(
         'click',
         'tabulate',
         'pyserial',
-        'rshell',
         'esptool',
         'stringcase',
         'ruamel.yaml'
-
     ],
     entry_points={
         'console_scripts': [

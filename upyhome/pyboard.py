@@ -122,9 +122,11 @@ class Pyboard:
     def __init__(self, device, baudrate=115200, user='micro', password='python', wait=0, rawdelay=0):
         global _rawdelay
         _rawdelay = rawdelay
+        self._is_serial = True
         if device and device[0].isdigit() and device[-1].isdigit() and device.count('.') == 3:
             # device looks like an IP address
-            self.serial = TelnetToSerial(device, user, password, read_timeout=10)
+            self._is_serial = False
+            self.telnet = TelnetToSerial(device, user, password, read_timeout=10)
         else:
             import serial
             delayed = False
@@ -198,19 +200,20 @@ class Pyboard:
                 data += self.serial.read(n)
                 n = self.serial.inWaiting()
             msg = data.decode('utf8').replace('\r\n', '')
-            if msg.endswith('>>> '):
+            #print(msg)
+            if msg.find('raw REPL; CTRL-B to exit>') >= 0:
+                repl = True
+            elif msg.find('>>> ') >= 0:
                 #print('Enter in REPL mode...')
                 #Must enter in REPL mode
-                self.serial.write(b'\x0D\x01')                
-            elif msg.endswith('raw REPL; CTRL-B to exit>'):
-                repl = True
+                self.serial.write(b'\x0D\x01') 
             else:
                 print('already in REPL mode...')
                 self.serial.write(b'\x0D\x02')
             ntry += 1
         if not repl:
             raise PyboardError('Can''t enter RAW REPL')
-        
+        return repl
 
     def exit_raw_repl(self):
         self.serial.write(b'\r\x02') # ctrl-B: enter friendly REPL
@@ -247,20 +250,19 @@ class Pyboard:
             self.serial.write(command_bytes[i:min(i + 256, len(command_bytes))])
             time.sleep(0.01)
         self.serial.write(b'\x04')
-        #time.sleep(0.2)
+        #time.sleep(0.1)
         # check if we could exec command
         data = b''
         ok = False
-        data += self.serial.read(2)
-        while self.serial.in_waiting > 0:  # Or: while ser.inWaiting():
-            data += self.serial.read(1)
-            if data.decode('utf8').endswith('OK'):
-                ok = True
+        n = 2
+        while n  > 0:  # Or: while ser.inWaiting():
+            data += self.serial.read(n)
+            if data.decode('utf8').find('OK') >= 0:
                 break
-            time.sleep(0.1)
-        ok = data.decode('utf8').endswith('OK')             
+            n = self.serial.in_waiting 
+        ok = data.decode('utf8').find('OK') >= 0
         if not ok:  
-            print(data)         
+            print("not ok" + data.decode('utf8'))         
             raise PyboardError('could not exec command')
 
     def exec_raw(self, command, timeout=10, data_consumer=None):

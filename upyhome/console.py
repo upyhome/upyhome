@@ -16,11 +16,9 @@ import glob
 import os
 from pathlib import Path
 
-from upyhome.const import SETTING_SECTION, SETTING_PORT, SETTING_FLASH
-from upyhome.const import SETTING_FIRMWARE, SETTING_GENERATOR
-from upyhome.const import DEVICE_DIR, BOARD_DIR, NETWORK_DIR, FIRMWARE_DIR
-from upyhome.config import is_setting_val, get_setting_val, set_setting_val
-from upyhome.config import save_config_obj, write_network_conf, get_generator_names
+from upyhome.const import *
+from upyhome.config import Config, write_network_conf
+from upyhome.shell import Shell
 
 COLOR_INFO = "magenta"
 COLOR_ASK = "blue"
@@ -31,80 +29,66 @@ COLOR_ERROR = "red"
 COLOR_COMMENT = "blue"
 COLOR_SRC = "bright_black"
 
-"""
-TODO make ask method more generic
-"""
+default_formater = lambda val: '{0}'.format(val)
+file_formatter = lambda file: get_file_name(file)
+
+def get_file_name(file):
+    bn = os.path.basename(file)
+    return os.path.splitext(bn)[0]
+
+def ask_for(values: list, prompt: str, formater=default_formater):
+    for i, val in enumerate(values):
+        #print(port.interface)
+        click.secho('[%d]: %s'%( i+1, formater(val)), fg=COLOR_ASK)
+    selection = "0"
+    while not (selection.isdigit() and 0 < int(selection) <= len(values)):
+        selection = click.prompt('Select %s (enter row number)'%(prompt)).strip()
+    return values[int(selection) - 1]
+
 def ask_port():
     ports = []
     detected = False
-    for port in list_ports.comports():
+    port_list = list_ports.comports()
+    for port in port_list:
         #if port.interface is not None:
         detected = True
         ports.append(port)
     if not detected:
-        click.secho('No serial devices detected', fg="red")
+        click.secho('No serial devices detected', fg=COLOR_ERROR)
         return None
-    click.secho("Detected ports", fg="green")
-    for i, port in enumerate(ports):
-        #print(port.interface)
-        click.secho('[%d]: %s (%s)' %(i+1, port.device, port.interface), fg="magenta")
-    selection = "0"
-    while not (selection.isdigit() and 0 < int(selection) <= len(ports)):
-        selection = click.prompt("Select Port (enter row number)").strip()
-    sel_port = ports[int(selection) - 1]
+    port_format = lambda port: '%s (%s)'%(port.device, port.interface)
+    sel_port = ask_for(port_list, 'serial port', port_format)
     return sel_port.device
 
-def check_port(conf):
-    if not is_setting_val(conf, SETTING_PORT):
+def check_port(conf: Config):
+    if not  conf.is_setting_val(SETTING_PORT):
         selected_port = ask_port()
         if selected_port is None:
             click.secho('The port is not configured! Exit', fg='red')
             return False
         else:
-            set_setting_val(conf, SETTING_PORT, selected_port)
-            save_config_obj(conf)
+            conf.set_setting_val(SETTING_PORT, selected_port)
+            conf.save()
             return True
     else:
         return True
-    
-
 
 def ask_firmware(platform):
-    click.secho("Available firmwares:", fg="green")
+    click.secho("Available firmwares:", fg=COLOR_ASK)
     firm_dir = os.path.join('.', FIRMWARE_DIR, '%s*.bin'%(platform))
     firm_list = glob.glob(firm_dir)
-    for i, firm in enumerate(firm_list):
-        name = os.path.basename(firm)
-        click.echo('[%d]: %s' %(i+1, os.path.splitext(name)[0]))
-    selection = "0"
-    while not (selection.isdigit() and 0 < int(selection) <= len(firm_list)):
-        selection = click.prompt("Select Firmware (enter row number)").strip()
-    return firm_list[int(selection) - 1] 
+    return ask_for(firm_list, 'firmware', file_formatter)
 
 def ask_device(platform, filter=""):
     click.secho("Available devices for %s platform")
     device_dir = os.path.join(BOARD_DIR, platform, '%s*.yaml'%(filter))
-    device_list = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(device_dir)] 
-    for i, device in enumerate(device_list):
-        click.echo('[%d]: %s' %(i+1, device))
-    selection = "0"
-    while not (selection.isdigit() and 0 < int(selection) <= len(device_list)):
-        selection = click.prompt("Select a device (enter row number)").strip()
-    return device_list[int(selection) - 1] 
-
-def get_networks():
-    net_conf_dir = os.path.join('.', NETWORK_DIR, '*.yaml')
-    return [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(net_conf_dir)] 
+    device_list = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(device_dir)]
+    return ask_for(device_list, 'device') 
 
 def ask_network():
-    click.secho("Available Networks:")
-    network_list = get_networks()
-    for i, network in enumerate(network_list):
-        click.echo('[%d]: %s' %(i+1, network))
-    selection = "0"
-    while not (selection.isdigit() and 0 < int(selection) <= len(network_list)):
-        selection = click.prompt("Select a device (enter row number)").strip()
-    return network_list[int(selection) - 1] 
+    net_conf_dir = os.path.join('.', NETWORK_DIR, '*.yaml')
+    network_list = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(net_conf_dir)] 
+    return ask_for(network_list, 'device') 
 
 def ask_create_network():
     if click.confirm('New network setup?'):
@@ -128,22 +112,6 @@ def ask_network_config():
     conf['repl_pwd'] = click.prompt("REPL password").strip()
     return conf
 
-def ask_generator(config):
-    if not is_setting_val(config, SETTING_GENERATOR):
-        return -1
-    name_list = get_generator_names(config)
-    for i, name in enumerate(name_list):
-        click.echo('[%d]: %s' %(i+1, name))
-    selection = "0"
-    while not (selection.isdigit() and 0 < int(selection) <= len(name_list)):
-        selection = click.prompt("Select a config (enter row number)").strip()
-    return int(selection) - 1
-
-def ask_sync(configs):
+def ask_sync(conf_files):
     click.secho("Available configs:", fg=COLOR_ASK)
-    for i, config in enumerate(configs):
-        click.echo('[%d]: config %03d' %(i+1, i))
-    selection = "0"
-    while not (selection.isdigit() and 0 < int(selection) <= len(configs)):
-        selection = click.prompt("Select a config (enter row number)").strip()
-    return int(selection) - 1
+    return ask_for(conf_files, 'config', file_formatter)

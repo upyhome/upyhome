@@ -17,7 +17,7 @@ FIRMWARE_DIR = 'firmwares'
 GENERATOR_DIR = 'generators'
 LIB_DIR = 'micropython'
 
-CONFIG_LIST_DIR = '.config'
+CONFIG_LIST_DIR = 'config'
 
 CONFIG_NAME = 'name'
 CONFIG_PLATFORM = 'platform'
@@ -42,7 +42,7 @@ MICROPYTHON_DIR = 'micropython'
 MICROPYTHON_FILES = ['boot.py', 'main.py', 'upyhome.py']
 MICROPYTHON_LIBS = {
     'common': {
-        'all': ['base.py', 'pub.py', 'sub.py', 'proxy.py']
+        'all': ['base.py']
     },
     'network': {
         'all': ['net.py']

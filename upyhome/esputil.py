@@ -14,9 +14,8 @@ import click
 import time
 from collections import namedtuple
 from configparser import ConfigParser
-from upyhome.const import CONFIG_PLATFORM
-from upyhome.const import SETTING_PORT, SETTING_SECTION, SETTING_FIRMWARE
-from upyhome.config import is_setting_val, get_setting_val, set_setting_val
+from upyhome.const import *
+from upyhome.config import Config
 
 FLASH_PARAMS = namedtuple('Params', 'compress encrypt no_stub flash_size flash_mode flash_freq erase_all verify addr_filename')
 DEFAULT_FLASH_SIZE = {
@@ -41,9 +40,9 @@ def get_flash_params(platform, flash, file):
 """
 Instantiate the esp class, run stub
 """
-def get_esp(config, baud=esptool.ESPLoader.ESP_ROM_BAUD):
+def get_esp(config: Config, baud=esptool.ESPLoader.ESP_ROM_BAUD):
     platform = config[CONFIG_PLATFORM]
-    port = get_setting_val(config, SETTING_PORT)
+    port = config.get_setting_val(SETTING_PORT)
     chip_class = {
         'esp8266': esptool.ESP8266ROM,
         'esp32': esptool.ESP32ROM

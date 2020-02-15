@@ -1,13 +1,60 @@
-# upyHome MicroPython (ESP32/8266) libraries
+# upyHome MicroPython tool
 
-Base MicroPython libraries to get started with upyHome.  
-Special thanks to [ESPHome](https://esphome.io/) team and their great firmware.
+## Goals
+
+This command line utility helps to configure and manage your micropython enabled device.  
+You can create and deploy upyHome on your device.
+
+## Get started
+
+First install Python 3 on your system.
+
+Clone the repository to a folder on your computer.  
+You must [install git](https://git-scm.com/) or download the [zipe file](https://github.com/upyhome/upyhome/archive/master.zip).
+
+
+```bash
+$ git clone https://github.com/upyhome/upyhome.git
+# goto upyhome folder
+$ cd upyhome
+# intall with pip
+$ pip install .
+```
+
+Run upyhome to get command list
+
+```bash
+$ upyhome 
+Usage: upyhome [OPTIONS] COMMAND [ARGS]...
+
+  Command line utility for managing a upyhome device. For further
+  informations type 'upyhome YOUR_COMMAND --help'
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  create   Create a config file.
+  erase    Erase flash, data will be lost.
+  exec     Execute a task on the device.
+  flash    Load micropython firmware.
+  monitor  Monitor upyhome on the device.
+  serial   Define the serial port used by the device.
+  start    Start upyhome on the device.
+  stop     Stop upyhome on the device.
+  sync     Upload the upyhome files.
+  view     Display a file on the device.
+```
+
 
 ## Installation
 
+
 ### Python
 
-Install Python 3 on your system.
+
+
+### Upyhome
 
 ### MicroPython - Manual installation
 

@@ -20,24 +20,27 @@ import textwrap
 import ast
 import binascii
 from upyhome.pyboard import Pyboard, PyboardError
-from upyhome.files import Files
-from upyhome.config import get_setting_val, get_config_val, create_lib_list
-from upyhome.const import SETTING_PORT, CONFIG_PLATFORM, TIME_OFFSET
-from upyhome.const import MICROPYTHON_DIR
+from upyhome.config import Config
+from upyhome.const import *
 BUFFER_SIZE = 32
 
+
 class Shell:
-    def __init__(self, conf):
-        self.platform = get_config_val(conf,CONFIG_PLATFORM)
-        port = get_setting_val(conf, SETTING_PORT)
+    """
+    TODO Implements communication and avoid pyboard
+    """
+    def __init__(self, conf: Config, stop=False):
+        self.platform = conf.get_config_val(CONFIG_PLATFORM)
+        port = conf.get_setting_val(SETTING_PORT)
         self.pyboard = Pyboard(port)
-        self._is_repl = False
-    
-    def begin(self):
-        self.pyboard.enter_raw_repl()
+        self._is_repl = self.pyboard.enter_raw_repl()
+        if stop:
+            self.mute()
 
     def end(self):
-        self.pyboard.exit_raw_repl()
+        if self._is_repl:
+            self.pyboard.exit_raw_repl()
+        self._is_repl = False
         self.pyboard.close()
 
     def is_upyhone(self):
@@ -69,14 +72,23 @@ class Shell:
                 return groups[1]
         return out
 
+    def mute(self, mute=True):
+        self.upyhone_exec('mute', data=mute)
+        time.sleep(0.5)
+        self.flush_serial()
+
     def upyhone_exec(self, func, comp=None, data=None):
         cmd = """
-            print(uph.exec('{0}', {1}, {2}))
+            try:
+                if 'uph' in locals():
+                    print(uph.exec('{0}', {1}, {2}))
+            except Exception as ex:
+                print(False)
             """.format(func, comp if comp is None else "'%s'"%(comp), data)
         try:
             out = self.pyboard.exec_(textwrap.dedent(cmd))
             #out = out.decode('utf8')
-            return self.handle_output(out)
+            return ast.literal_eval(self.handle_output(out))
         except PyboardError as ex:
             click.secho(str(ex), fg="red")
             return False
@@ -98,7 +110,7 @@ class Shell:
             return False
 
 
-    def list_files(self):
+    def list_files(self, pretty_print=False):
         """
         Returns a list of tuple with files properties in the device: (path, ST_SIZE, ST_MTIME)
         """
@@ -174,7 +186,7 @@ class Shell:
         except PyboardError as ex:
             # Check if this is an OSError #2, i.e. directory doesn't exist and
             # rethrow it as something more descriptive.
-            click.secho(ex, fg="red")
+            #click.secho(ex, fg="red")
             return None
         # Parse the result list and return it.
         res = []
@@ -182,7 +194,12 @@ class Shell:
         for val in cmd_res:
             tup = eval(val)
             if tup[3] != 16384: #not dir
-                res.append((tup[0][1:], tup[1], tup[2]))
+                if pretty_print:
+                    time = tup[2]+TIME_OFFSET
+                    dt = datetime.fromtimestamp(time) 
+                    res.append((tup[0][1:], dt))
+                else:
+                    res.append((tup[0][1:], tup[1], tup[2]))
         return res
 
     def sync_time(self):
@@ -217,7 +234,7 @@ class Shell:
             error = True
         return error
         
-    def copy_file(self, file, src_dir=MICROPYTHON_DIR, index=None):
+    def copy_file(self, file, src_dir=MICROPYTHON_DIR, index=None, dest_name=None):
         """
         Copy a file with repl.\
         If index is set, the file name is prefixed with - 3 digits.\
@@ -228,7 +245,7 @@ class Shell:
             f_to_cp = '%03d-%s'%(index, file)
         with open(os.path.join(src_dir, f_to_cp), 'r') as f:
             data = f.read()
-            self.copy_data(data, file)
+            self.copy_data(data, dest_name if dest_name is not None else file)
         
     def copy_data(self, data, file):
         self.pyboard.exec_("f = open('{0}', 'wb')".format('/'+file))
@@ -255,8 +272,8 @@ class Shell:
         except Exception as ex:
             print(ex)
 
-    def sync_files(self, conf_obj):
-        src_files = create_lib_list(conf_obj)
+    def sync_files(self, conf: Config):
+        src_files = conf.create_lib_list()
         dev_files = self.list_files()
         sync_files = []
         for file in dev_files:
@@ -313,3 +330,9 @@ class Shell:
             except UnicodeDecodeError:
                 raise ex
         return binascii.unhexlify(out).decode('utf8')
+
+    def flush_serial(self):
+        n = self.pyboard.serial.inWaiting()
+        while n > 0:
+            self.pyboard.serial.read(n)
+            n = self.pyboard.serial.inWaiting()

@@ -1,5 +1,5 @@
 
-platform: esp8266
+platform: esp32
 digital-inputs: []
 digital-outputs: []
 led: []

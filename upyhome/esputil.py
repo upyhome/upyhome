@@ -41,7 +41,7 @@ def get_flash_params(platform, flash, file):
 Instantiate the esp class, run stub
 """
 def get_esp(config: Config, baud=esptool.ESPLoader.ESP_ROM_BAUD):
-    platform = config[CONFIG_PLATFORM]
+    platform = config.get_config_val(CONFIG_PLATFORM)
     port = config.get_setting_val(SETTING_PORT)
     chip_class = {
         'esp8266': esptool.ESP8266ROM,

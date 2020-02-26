@@ -1,53 +1,54 @@
 
-platform: esp8266
+platform: esp32
+
 digital-inputs:
-  - name: btnA
+  - topic: btnA
     pin: 39
-    inverted: false
+    inverted: true
     long: 1000
-    pullup: true
-  - name: btnB
+  - topic: btnB
     pin: 38
-    inverted: false
+    inverted: true
     long: 2000
-    pullup: true
-  - name: btnC
+  - topic: btnC
     pin: 37
-    inverted: false
+    inverted: true
     long: 3000
-    pullup: true
+
 digital-outputs: []
-led:
-  name: led
-  pin: 39
-  size: 10
+
+leds:
+  - topic: led
+    pin: 15
+    num: 10
+
 i2cs:
-  - name: i2c_0
+  - topic: i2c_0
     hard: true
     num: 0
     #sda: 21
     #scl: 22
     #freq: 400000
-drivers:
-  - name: mpu
-    driver: m5smpu
-    i2c: i2c_0
-    address: 0x68
-    polling: 200
-    user_cb: |
-      idx = 0
-      max = 0
-      for i in range(3):
-          if abs(val[i]) > max:
-              max = abs(acc[i])
-              idx = i
-      if idx == 2:
-          upy.leds["led"].set_rgba(0, 0, 255, 0.5)
-      elif idx==1:
-          upy.leds["led"].set_rgba(0, 255, 0, 0.5)
-      else:
-          upy.leds["led"].set_rgba(255, 0, 0, 0.5)
-      return False
+#drivers:
+#  - name: mpu
+#    driver: m5smpu
+#    i2c: i2c_0
+#    address: 0x68
+#    polling: 200
+#    user_cb: |
+#      idx = 0
+#      max = 0
+#      for i in range(3):
+#          if abs(val[i]) > max:
+#              max = abs(acc[i])
+#              idx = i
+#      if idx == 2:
+#          upy.leds["led"].set_rgba(0, 0, 255, 0.5)
+#      elif idx==1:
+#          upy.leds["led"].set_rgba(0, 255, 0, 0.5)
+#      else:
+#          upy.leds["led"].set_rgba(255, 0, 0, 0.5)
+#      return False
 
 
 

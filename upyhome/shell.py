@@ -73,11 +73,11 @@ class Shell:
         return out
 
     def mute(self, mute=True):
-        self.upyhone_exec('mute', data=mute)
+        self.upyhone_exec('mute', data=mute, skip=True)
         time.sleep(0.5)
         self.flush_serial()
 
-    def upyhone_exec(self, func, comp=None, data=None):
+    def upyhone_exec(self, func, comp=None, data=None, skip=False):
         cmd = """
             try:
                 if 'uph' in locals():
@@ -87,8 +87,10 @@ class Shell:
             """.format(func, comp if comp is None else "'%s'"%(comp), data)
         try:
             out = self.pyboard.exec_(textwrap.dedent(cmd))
-            #out = out.decode('utf8')
-            return ast.literal_eval(self.handle_output(out))
+            if not skip:
+                return ast.literal_eval(self.handle_output(out))
+            else:
+                return True
         except PyboardError as ex:
             click.secho(str(ex), fg="red")
             return False

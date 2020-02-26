@@ -188,7 +188,7 @@ def files(config):
     print_sep()
     if stop:
         click.secho('Restart upyHome', fg='yellow')
-        if shell.upyhone_exec('start'):
+        if shell.upyhone_exec('start', skip=True):
             click.secho('Upyhonme is started', fg='green')
     shell.end()
 

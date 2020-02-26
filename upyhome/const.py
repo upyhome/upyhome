@@ -42,7 +42,7 @@ MICROPYTHON_DIR = 'micropython'
 MICROPYTHON_FILES = ['boot.py', 'main.py', 'upyhome.py']
 MICROPYTHON_LIBS = {
     'common': {
-        'all': ['base.py']
+        'all': ['base.py', 'common.py']
     },
     'network': {
         'all': ['net.py']
